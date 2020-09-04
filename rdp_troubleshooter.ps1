@@ -94,10 +94,20 @@ Write-Output ""
 Write-Output "TCP connections on the assigned RDP port:";
 $conn
 
+Write-Output ""
+Write-Output "NetConnectionProfile(s):"
+$conProfile = Get-NetConnectionProfile
+Write-Output $conProfile
+Write-Output ' => your NetworkCategory(ies)'
+Write-Output $conProfile.NetworkCategory 
+
+
 # print firewall status and RDP rules status
 Write-Output ""
+Write-Output ""
 Write-Output "Firewall status:"
-Get-NetFirewallProfile | select name,enabled
+$fwProfiles = Get-NetFirewallProfile | select name,enabled | ft
+Write-Output $fwProfiles
 
 Write-Output ""
 Write-Output ""
@@ -105,3 +115,15 @@ Write-Output "RDP Firewall exception rules:"
 Get-NetFirewallRule -DisplayGroup 'Remote Desktop' | Select-Object name, enabled, profile,direction,action `
                     | Format-Table  -Wrap -AutoSize
 
+Write-Output ""
+Write-Output "Users that are allowed to connect via RDP:"
+# on some machines:
+# Get-LocalGroupMember: An unspecified error occurred: error code = 1789
+$rdpUsers=Get-LocalGroup -Name 'Administrators','Remote Desktop Users'  | Get-LocalGroupMember -ErrorVariable glgmErrorVar
+if($glgmErrorVar -ne $null -and $glgmErrorVar[0].ToString().Contains('error code = 1789') -eq $true)
+{
+    net localgroup "Remote Desktop users"
+    net localgroup "Administrators"
+} else {
+    Write-Output $rdpUsers
+}
